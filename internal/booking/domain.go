@@ -1,12 +1,22 @@
 package booking
 
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrSeatAlreadyBooked = errors.New("seat already booked")
+)
+
 // Booking represents a confirmed seat reservation.
 type Booking struct {
 	ID      string
 	MovieID string
 	SeatID  string
 	UserID  string
-	Status  string
+	Status    string
+	ExpiresAt time.Time
 }
 
 type BookingStore interface {
