@@ -1,6 +1,6 @@
 # Cinema Ticket Booking
 
-Mini project built with Go and Redis.
+Mini project built with Go and Redis. Preventing double booking under concurrent requests.
 
 ## Features
 
