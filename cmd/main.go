@@ -1,36 +1,49 @@
+
 package main
 
 import (
-	"log"
-	"net/http"
+    "log"
+    "net/http"
+    "os"
 
-	"github.com/sikozonpc/cinema/internal/adapters/redis"
-	"github.com/sikozonpc/cinema/internal/booking"
-	"github.com/sikozonpc/cinema/internal/utils"
+    "github.com/sikozonpc/cinema/internal/adapters/redis"
+    "github.com/sikozonpc/cinema/internal/booking"
+    "github.com/sikozonpc/cinema/internal/utils"
 )
 
 func main() {
-	mux := http.NewServeMux()
+    mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /movies", listMovies)
+    mux.HandleFunc("GET /movies", listMovies)
+    mux.Handle("GET /", http.FileServer(http.Dir("static")))
 
-	mux.Handle("GET /", http.FileServer(http.Dir("static")))
+    redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+    		redisURL = "localhost:6379"
+		}
 
-	store := booking.NewRedisStore(redis.NewClient("localhost:6379"))
-	svc := booking.NewService(store)
+	store := booking.NewRedisStore(redis.NewClient(redisURL))
+    svc := booking.NewService(store)
 
-	bookingHandler := booking.NewHandler(svc)
+    bookingHandler := booking.NewHandler(svc)
 
-	mux.HandleFunc("GET /movies/{movieID}/seats", bookingHandler.ListSeats)
-	mux.HandleFunc("POST /movies/{movieID}/seats/{seatID}/hold", bookingHandler.HoldSeat)
+    mux.HandleFunc("GET /movies/{movieID}/seats", bookingHandler.ListSeats)
+    mux.HandleFunc("POST /movies/{movieID}/seats/{seatID}/hold", bookingHandler.HoldSeat)
+    mux.HandleFunc("PUT /sessions/{sessionID}/confirm", bookingHandler.ConfirmSession)
+    mux.HandleFunc("DELETE /sessions/{sessionID}", bookingHandler.ReleaseSession)
 
-	mux.HandleFunc("PUT /sessions/{sessionID}/confirm", bookingHandler.ConfirmSession)
-	mux.HandleFunc("DELETE /sessions/{sessionID}", bookingHandler.ReleaseSession)
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
 
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatal(err)
-	}
+    log.Printf("Server starting on port %s", port)
+
+    if err := http.ListenAndServe(":"+port, mux); err != nil {
+        log.Fatal(err)
+    }
 }
+
 
 var movies = []movieResponse{
 	{ID: "inception", Title: "Inception", Rows: 5, SeatsPerRow: 8},

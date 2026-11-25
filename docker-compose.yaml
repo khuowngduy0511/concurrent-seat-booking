@@ -1,3 +1,4 @@
+  GNU nano 8.7.1                 docker-compose.yaml                            
 services:
   redis:
     container_name: redis
@@ -14,3 +15,5 @@ services:
     ports:
       - "8081:8081"
     user: redis
+
+
